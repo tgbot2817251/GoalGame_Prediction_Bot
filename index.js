@@ -1,13 +1,13 @@
-// Import necessary libraries
-const TelegramBot = require('node-telegram-bot-api');
-const schedule = require('node-schedule');
 require('dotenv').config();
+const TelegramBot = require("node-telegram-bot-api");
+const schedule = require('node-schedule'); // Import node-schedule
 
-// Load environment variables
+// 🔥 Use the token from the environment variable
 const token = process.env.BOT_TOKEN;
-const chatId = process.env.CHAT_ID;
-
 const bot = new TelegramBot(token, { polling: true });
+
+// 🔥 Private or Public Channel ID from .env
+const chatId = process.env.CHANNEL_ID;
 
 // Prediction timings (India Time)
 const predictionTimes = [
@@ -24,15 +24,15 @@ const generatePrediction = () => {
     return grid.map(row => row.join('')).join('\n');
 };
 
-// Function to send a prediction
+// Function to send a prediction with buttons
 const sendPrediction = async () => {
     const message = `ɢᴏᴀʟ ɢᴀᴍᴇ ᴘʀᴇᴅɪᴄᴛɪᴏɴ ⚽💣\n\nꜰɪᴇʟᴅ: ᴍᴇᴅɪᴜᴍ\nᴍɪɴᴇꜱ: 1💣\nɢᴏᴀʟ ᴏᴘᴇɴ: 4⚽\n\n${generatePrediction()}`;
 
     const buttons = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: "Best Game", url: "https://www.team19.in/bestgame.html" }],
-                [{ text: "Prediction Follow Process", url: "https://t.me/GoalGame_Prediction/355" }]
+                [{ text: "🎮 51 Game Register", url: "https://www.team19.in/bestgame.html" }],
+                [{ text: "🤝 Prediction Follow Process", url: "https://t.me/GoalGame_Prediction/355" }]
             ]
         }
     };
@@ -45,7 +45,7 @@ const sendPrediction = async () => {
     }, 60000);
 };
 
-// Main scheduler for each prediction time
+// Scheduler for each prediction time
 predictionTimes.forEach(time => {
     const [hour, minute] = time.split(':');
 
@@ -66,4 +66,4 @@ predictionTimes.forEach(time => {
     });
 });
 
-console.log('Goal Prediction Bot is running...');
+console.log('✅ Goal Prediction Bot is running...');
