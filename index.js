@@ -1,27 +1,19 @@
 require('dotenv').config();
 const TelegramBot = require("node-telegram-bot-api");
 const schedule = require('node-schedule');
+const moment = require('moment-timezone');
 
-// Bot Token and Chat ID from .env
+// Bot token and channel ID
 const token = process.env.BOT_TOKEN;
-const chatId = process.env.CHAT_ID;
-
+const chatId = process.env.CHANNEL_ID;
 const bot = new TelegramBot(token, { polling: true });
 
-// Convert IST time to UTC (since Railway uses UTC time)
-const convertISTtoUTC = (hour, minute) => {
-    const date = new Date();
-    date.setHours(hour, minute, 0, 0);
-    return {
-        hour: date.getUTCHours(),
-        minute: date.getUTCMinutes()
-    };
-};
+// Prediction timings in IST
+const predictionTimesIST = [
+    '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'
+];
 
-// Prediction Timings (IST)
-const predictionTimes = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
-
-// Function to generate prediction grid
+// Function to generate a prediction grid
 const generatePrediction = () => {
     const grid = Array.from({ length: 4 }, () => Array(7).fill('🟩'));
     for (let col = 0; col < 4; col++) {
@@ -31,57 +23,55 @@ const generatePrediction = () => {
     return grid.map(row => row.join('')).join('\n');
 };
 
-// Send Prediction Message
+// Function to send the main prediction
 const sendPrediction = async () => {
     const message = `ɢᴏᴀʟ ɢᴀᴍᴇ ᴘʀᴇᴅɪᴄᴛɪᴏɴ ⚽💣\n\nꜰɪᴇʟᴅ: ᴍᴇᴅɪᴜᴍ\nᴍɪɴᴇꜱ: 1💣\nɢᴏᴀʟ ᴏᴘᴇɴ: 4⚽\n\n${generatePrediction()}`;
 
     const buttons = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: "Best Game", url: "https://51game.com" }],
-                [{ text: "Prediction Follow Process", url: "https://t.me/sachin" }]
+                [{ text: "🎮 51 Game Register", url: "https://www.team19.in/bestgame.html" }],
+                [{ text: "🤝 Prediction Follow Process", url: "https://t.me/GoalGame_Prediction/395" }]
             ]
         }
     };
 
     await bot.sendMessage(chatId, message, buttons);
-    console.log("✅ Prediction message sent");
-
-    // Send extra post after 60 seconds
+    
+    // Extra post after 60 seconds
     setTimeout(() => {
-        bot.copyMessage(chatId, '@Only_4_photos', 34)
-            .then(() => console.log("✅ Extra post (after prediction) sent"))
-            .catch(err => console.error("❌ Error sending extra post:", err));
+        bot.copyMessage(chatId, '@Only_4_photos', 34);
     }, 60000);
 };
 
-// Schedule for each prediction time
-predictionTimes.forEach(time => {
+// Function to schedule posts based on IST converted to UTC
+const scheduleJob = (hour, minute, callback) => {
+    const timeInUTC = moment.tz({ hour, minute }, "Asia/Kolkata").utc();
+    schedule.scheduleJob({ hour: timeInUTC.hour(), minute: timeInUTC.minute() }, callback);
+};
+
+// Loop to schedule all tasks
+predictionTimesIST.forEach(time => {
     const [hour, minute] = time.split(':').map(Number);
 
-    // Convert to UTC for Railway
-    const predictionUTC = convertISTtoUTC(hour, minute);
-    const prePredictionUTC = convertISTtoUTC(hour, minute - 3);
-
-    // Pre-prediction Post (3 minutes before)
-    schedule.scheduleJob({ hour: prePredictionUTC.hour, minute: prePredictionUTC.minute }, () => {
-        bot.copyMessage(chatId, '@Only_4_photos', 33)
-            .then(() => console.log("✅ Pre-prediction post sent"))
-            .catch(err => console.error("❌ Error sending pre-prediction post:", err));
+    // Pre-prediction post (3 minutes before)
+    scheduleJob(hour, minute - 3, () => {
+        console.log(`Pre-prediction post sent for ${time}`);
+        bot.copyMessage(chatId, '@Only_4_photos', 33);
     });
 
-    // Main Prediction
-    schedule.scheduleJob({ hour: predictionUTC.hour, minute: predictionUTC.minute }, async () => {
+    // Main prediction process
+    scheduleJob(hour, minute, async () => {
+        console.log(`Starting predictions for ${time}`);
         for (let i = 0; i < 20; i++) {
             await sendPrediction();
-            await new Promise(res => setTimeout(res, 90000)); // 90 seconds delay
+            await new Promise(res => setTimeout(res, 90000)); // Wait 90 seconds
         }
 
-        // Post after predictions end
-        bot.copyMessage(chatId, '@Only_4_photos', 35)
-            .then(() => console.log("✅ Post-prediction message sent"))
-            .catch(err => console.error("❌ Error sending post-prediction message:", err));
+        // Post after all predictions
+        bot.copyMessage(chatId, '@Only_4_photos', 35);
+        console.log(`Post-prediction message sent for ${time}`);
     });
 });
 
-console.log('✅ Goal Prediction Bot is running...');
+console.log('✅ Goal Prediction Bot is running with accurate IST timing...');
