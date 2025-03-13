@@ -30,7 +30,7 @@ const sendPrediction = async () => {
     const buttons = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: "🎮 51 Game Register", url: "https://www.team19.in/bestgame.html" }],
+                [{ text: "🎮 Best Game Link", url: "https://www.team19.in/bestgame.html" }],
                 [{ text: "🤝 Prediction Follow Process", url: "https://t.me/GoalGame_Prediction/395" }]
             ]
         }
@@ -41,37 +41,48 @@ const sendPrediction = async () => {
     // Extra post after 60 seconds
     setTimeout(() => {
         bot.copyMessage(chatId, '@Only_4_photos', 34);
+        console.log("✅ Extra post sent after prediction.");
     }, 60000);
 };
 
-// Function to schedule posts based on IST converted to UTC
-const scheduleJob = (hour, minute, callback) => {
+// Function to schedule jobs accurately
+const scheduleJob = (hour, minute, callback, description) => {
+    // Convert time to UTC for scheduling
     const timeInUTC = moment.tz({ hour, minute }, "Asia/Kolkata").utc();
     schedule.scheduleJob({ hour: timeInUTC.hour(), minute: timeInUTC.minute() }, callback);
+    console.log(`✅ Scheduled ${description} at ${timeInUTC.format('HH:mm')} UTC (${hour}:${minute} IST)`);
 };
 
 // Loop to schedule all tasks
 predictionTimesIST.forEach(time => {
-    const [hour, minute] = time.split(':').map(Number);
+    let [hour, minute] = time.split(':').map(Number);
 
-    // Pre-prediction post (3 minutes before)
-    scheduleJob(hour, minute - 3, () => {
-        console.log(`Pre-prediction post sent for ${time}`);
+    // Pre-prediction time calculation
+    let preMinute = minute - 3;
+    let preHour = hour;
+    if (preMinute < 0) {
+        preMinute += 60;
+        preHour = (preHour - 1 + 24) % 24;
+    }
+
+    // Pre-prediction post
+    scheduleJob(preHour, preMinute, () => {
         bot.copyMessage(chatId, '@Only_4_photos', 33);
-    });
+        console.log(`⚠️ Pre-prediction post sent for ${time}`);
+    }, `Pre-prediction for ${time}`);
 
     // Main prediction process
     scheduleJob(hour, minute, async () => {
-        console.log(`Starting predictions for ${time}`);
+        console.log(`🚀 Starting predictions for ${time}`);
         for (let i = 0; i < 20; i++) {
             await sendPrediction();
             await new Promise(res => setTimeout(res, 90000)); // Wait 90 seconds
         }
 
-        // Post after all predictions
+        // Post after predictions end
         bot.copyMessage(chatId, '@Only_4_photos', 35);
-        console.log(`Post-prediction message sent for ${time}`);
-    });
+        console.log(`✅ Post-prediction message sent for ${time}`);
+    }, `Main prediction for ${time}`);
 });
 
 console.log('✅ Goal Prediction Bot is running with accurate IST timing...');
