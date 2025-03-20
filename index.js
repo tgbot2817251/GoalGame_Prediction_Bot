@@ -31,7 +31,7 @@ const sendPrediction = async () => {
         reply_markup: {
             inline_keyboard: [
                 [{ text: "🎮 Best Game Link", url: "https://www.team19.in/bestgame.html" }],
-                [{ text: "🤝 Prediction Follow Process", url: "https://t.me/GoalGame_Prediction/395" }]
+                [{ text: "🤝 Prediction Follow Process", url: "https://t.me/GoalGame_Prediction/7" }]
             ]
         }
     };
